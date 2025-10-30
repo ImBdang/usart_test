@@ -7,11 +7,8 @@
 //USARTDIV = 39.0625, baud 115200, PCLK2 = 72MHz
 //8N1
 
-//uint8_t f=0;
-
 uint8_t usart1_receive(void) {
     while (!(USART1->SR & (1 << 5)));  
-  //  f=1;
     return USART1->DR;                
 }
 
@@ -19,16 +16,15 @@ void delay(volatile uint32_t d) {
     while(d--) { __asm("nop"); }
 }
 
-
 int main(){
 
     RCC->CR |= (1 << 16);
     while (!(RCC->CR & (1 << 17)));
     RCC->CFGR |= (7 << 18);
     RCC->CFGR |= (1 << 16);
-    RCC->CR |= (1 << 24); // PLL on
-    while (!(RCC->CR & (1 << 25))); // Wait PLL ready
-    RCC->CFGR = (RCC->CFGR & ~3) | 2;  // System clock = PLL
+    RCC->CR |= (1 << 24); //PLL on
+    while (!(RCC->CR & (1 << 25))); //cho pll 
+    RCC->CFGR = (RCC->CFGR & ~3) | 2;  //SYSCLK = PLL
     while (((RCC->CFGR >> 2) & 3) != 2); 
 
 
@@ -63,25 +59,19 @@ int main(){
     GPIOA->CRH &= ~(0xF << 8); 
     GPIOA->CRH |=  (0x4 << 8);//0100
 
-    Queu q;
+    volatile Queu q;
     q.head=0;
     q.tail=0;
     uint8_t temp;
     uint8_t r;
     while (1){
         temp = usart1_receive(); 
-        setbit(&GPIOC->ODR, 13, 0);
-        //delay(25);
-        setbit(&GPIOC->ODR, 13, 1);
-        //if (!isFull(&q)){
-        //  /   enqueu(&q, temp);
-        // }
-        // if (isEmpty(&q) == 0){
-        //     dequeu(&q, &r);
-        //     setbit(&GPIOC->ODR, 13, 0);
-        //     delay(25000);
-        //     setbit(&GPIOC->ODR, 13, 1);
-        // }
+        if (!isFull(&q)){
+            enqueu(&q, temp);
+        }
+        if (isEmpty(&q) == 0){
+            dequeu(&q, &r);
+        }
     }
 
     return 0;
